@@ -1,0 +1,24 @@
+{
+    "routes": [
+        {
+            "src": "/register",
+            "dest": "/"
+        },
+        {
+            "src": "/login",
+            "dest": "/"
+        },
+        {
+            "src": "/home",
+            "dest": "/"
+        },
+        {
+            "src": "/forgotpassword",
+            "dest": "/"
+        },
+        {
+            "src": "/reset_password/:id/:token",
+            "dest": "/"
+        }
+    ]
+}
