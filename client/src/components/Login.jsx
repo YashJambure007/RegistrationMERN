@@ -30,8 +30,8 @@ function Login() {
       axios.post('http://localhost:3000/login', {email,password})
       .then(result => {
         console.log(result)
-        if(result.data === "Success"){
-          navigate("/")
+        if(result.data.Status === "Success"){
+          navigate("/home")
         }
       })
       .catch(err => console.log(err))
@@ -85,7 +85,7 @@ function Login() {
                     </button>
                 </form>
                 <Link to={"/forgotpassword"}>Forgot Password</Link>
-                <Link to={"/register"} className='btn btn-default border w-100 bg-light rounded-0 text-decoration-none mt-3 user-select-none'>
+                <Link to={"/home"} className='btn btn-default border w-100 bg-light rounded-0 text-decoration-none mt-3 user-select-none'>
                   Register
                 </Link>
             </div>
