@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: ["https://registration-mern.vercel.app"],
-    methods: ["GET", "POST"],
+    methods: ["POST", "GET"],
     credentials: true,
   })
 );
