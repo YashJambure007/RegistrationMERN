@@ -18,6 +18,7 @@ app.use(
 );
 app.use(cookieParser());
 
+
 mongoose.connect("mongodb+srv://jambureyash2003:jambureyash2003@registration.vmjxco1.mongodb.net/?retryWrites=true&w=majority&appName=Registration");
 
 const varifyUser = (req, res, next) => {
