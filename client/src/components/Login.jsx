@@ -31,7 +31,7 @@ function Login() {
       .then(result => {
         console.log(result)
         if(result.data === "Success"){
-          navigate("/Home")
+          navigate("/")
         }
       })
       .catch(err => console.log(err))
@@ -86,7 +86,7 @@ function Login() {
                 </form>
                 <Link to={"/forgotpassword"}>Forgot Password</Link>
                 <Link to={"/register"} className='btn btn-default border w-100 bg-light rounded-0 text-decoration-none mt-3 user-select-none'>
-                  Sign Up
+                  Register
                 </Link>
             </div>
         </div>
