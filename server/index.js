@@ -6,10 +6,6 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
-const dotenv  = require("dotenv")
- 
-const PORT = process.env.PORT;
-dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -136,6 +132,6 @@ app.post('/reset-password/:id/:token', (req, res) => {
 })
 
 
-app.listen(PORT, () => {
-  console.log(`Server is running on ${PORT}`);
+app.listen(3000, () => {
+  console.log("server is running");
 });
