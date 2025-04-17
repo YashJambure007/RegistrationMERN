@@ -18,7 +18,7 @@ app.use(
 );
 app.use(cookieParser());
 
-mongoose.connect("mongodb://127.0.0.1:27017/employee");
+mongoose.connect("mongodb+srv://jambureyash2003:<db_password>@registration.avajjfy.mongodb.net/?retryWrites=true&w=majority&appName=Registration");
 
 const varifyUser = (req, res, next) => {
   const token = req.cookies.token;
