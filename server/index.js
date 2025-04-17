@@ -17,6 +17,7 @@ app.use(
   })
 );
 app.use(cookieParser());
+app.use(cors())
 
 mongoose.connect("mongodb+srv://jambureyash2003:jambureyash2003@registration.vmjxco1.mongodb.net/?retryWrites=true&w=majority&appName=Registration");
 
