@@ -24,10 +24,10 @@ function Signup() {
         setShowPassword(!showPassword)
     }
 
-
+    axios.defaults.withCredentials = true
     const handleSubmit = (e) => {
         e.preventDefault()
-        axios.post('http://localhost:3000/register', {name,email,password})
+        axios.post('http://localhost:3000', {name,email,password})
         .then(result => {console.log(result)
             navigate('/login')
         })

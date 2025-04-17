@@ -11,8 +11,8 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST"],
+    origin: ["https://registration-mern.vercel.app"],
+    methods: ["POST", "GET"],
     credentials: true,
   })
 );
