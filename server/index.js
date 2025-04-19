@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["https://registration-mern.vercel.app"],
+    origin: ["https://registration-mern-api-sage.vercel.app"],
     methods: ["POST", "GET"],
     credentials: true,
   })
