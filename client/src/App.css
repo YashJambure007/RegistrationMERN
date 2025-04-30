@@ -1,0 +1,18 @@
+.Input{
+    position: relative;
+}
+.Input input{
+    transition: 0.5s linear;
+    padding-right: 50px;
+
+    ::placeholder{
+        opacity: 0.5;
+    }
+}
+.Icon{
+    font-size: 1.2rem;
+    position: absolute;
+    right: 5%;
+    top: 12%;
+    
+}
