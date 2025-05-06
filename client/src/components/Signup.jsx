@@ -15,14 +15,16 @@ function Signup() {
     setShowPassword(!showPassword);
   };
 
-  axios.defaults.withCredentials = true;
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    const apiUrl = import.meta.env.VITE_API_URL; // Update here
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     axios
-      .post(`${apiUrl}/register`, { name, email, password })
+      .post(
+        `${apiUrl}/register`,
+        { name, email, password },
+        { withCredentials: true } // ✅ ensure cookies are sent
+      )
       .then((result) => {
         console.log(result);
         navigate("/login");

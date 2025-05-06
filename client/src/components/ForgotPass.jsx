@@ -3,17 +3,19 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function ForgotPass() {
-  const [email, setEmail] = useState();
+  const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  axios.defaults.withCredentials = true;
-
   const handleSubmit = (e) => {
     e.preventDefault();
     axios
-      .post(`${apiUrl}/forgot-password`, { email })
+      .post(
+        `${apiUrl}/forgot-password`,
+        { email },
+        { withCredentials: true } // ✅ ensure cookies are sent
+      )
       .then((res) => {
         if (res.data.Status === "Success") {
           navigate("/login");
