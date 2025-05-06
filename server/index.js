@@ -8,27 +8,34 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 
-const PORT = process.env.PORT || 3000;
-
-// Load environment variables
 dotenv.config();
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// CORS setup
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [process.env.FRONTEND_URL || "http://localhost:5173"],
     methods: ["POST", "GET"],
     credentials: true,
   })
 );
-app.use(cookieParser());
 
-// Debug MongoDB URI
-console.log("Mongo URI:", process.env.MONGO_URI);
+// Root route to verify deployment
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 
-// Connect to MongoDB
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
@@ -37,19 +44,16 @@ mongoose
 // Middleware to verify admin user
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
-  if (!token) {
-    return res.json("Token is Missing");
-  }
+  if (!token) return res.status(401).json("Token is missing");
+
   jwt.verify(token, "jwt-secret-key", (err, decoded) => {
-    if (err) return res.json("Error with Token");
-    if (decoded.role === "admin") {
-      next();
-    } else {
-      return res.json("not admin");
-    }
+    if (err) return res.status(403).json("Invalid token");
+    if (decoded.role === "admin") next();
+    else return res.status(403).json("Not authorized");
   });
 };
 
+// Routes
 app.get("/dashboard", verifyUser, (req, res) => {
   res.json("Success");
 });
@@ -61,15 +65,15 @@ app.post("/register", (req, res) => {
     .then((hash) => {
       UserModel.create({ name, email, password: hash })
         .then(() => res.json("Success"))
-        .catch((err) => res.json(err));
+        .catch((err) => res.status(500).json(err));
     })
-    .catch((err) => res.json(err));
+    .catch((err) => res.status(500).json(err));
 });
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   UserModel.findOne({ email }).then((user) => {
-    if (!user) return res.json("No Record existed");
+    if (!user) return res.status(404).json("No Record existed");
 
     bcrypt.compare(password, user.password, (err, response) => {
       if (response) {
@@ -78,10 +82,14 @@ app.post("/login", (req, res) => {
           "jwt-secret-key",
           { expiresIn: "1d" }
         );
-        res.cookie("token", token);
+        res.cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "Lax",
+        });
         return res.json({ Status: "Success", role: user.role });
       } else {
-        return res.json("The password is incorrect");
+        return res.status(401).json("The password is incorrect");
       }
     });
   });
@@ -90,7 +98,7 @@ app.post("/login", (req, res) => {
 app.post("/forgot-password", (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email }).then((user) => {
-    if (!user) return res.send({ Status: "User not existed" });
+    if (!user) return res.status(404).json({ Status: "User not existed" });
 
     const token = jwt.sign({ id: user._id }, "jwt_secret_key", {
       expiresIn: "1d",
@@ -104,20 +112,18 @@ app.post("/forgot-password", (req, res) => {
       },
     });
 
+    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${user._id}/${token}`;
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Reset Password Link",
-      text: `http://localhost:5173/reset_password/${user._id}/${token}`,
+      text: `Click to reset: ${resetUrl}`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
-        return res.send({ Status: "Failed to send email" });
-      } else {
-        return res.send({ Status: "Success" });
-      }
+    transporter.sendMail(mailOptions, (error) => {
+      if (error) return res.status(500).json({ Status: "Failed to send email" });
+      return res.json({ Status: "Success" });
     });
   });
 });
@@ -127,20 +133,20 @@ app.post("/reset-password/:id/:token", (req, res) => {
   const { password } = req.body;
 
   jwt.verify(token, "jwt_secret_key", (err) => {
-    if (err) return res.json({ Status: "Error with token" });
+    if (err) return res.status(403).json({ Status: "Invalid token" });
 
     bcrypt
       .hash(password, 10)
       .then((hash) => {
-        UserModel.findByIdAndUpdate({ _id: id }, { password: hash })
-          .then(() => res.send({ Status: "Success" }))
-          .catch((err) => res.send({ Status: err }));
+        UserModel.findByIdAndUpdate(id, { password: hash })
+          .then(() => res.json({ Status: "Success" }))
+          .catch((err) => res.status(500).json({ Status: err }));
       })
-      .catch((err) => res.send({ Status: err }));
+      .catch((err) => res.status(500).json({ Status: err }));
   });
 });
 
-
+// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
