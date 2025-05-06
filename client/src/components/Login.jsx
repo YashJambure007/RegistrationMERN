@@ -8,6 +8,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleShowPassword = () => {
@@ -26,7 +27,10 @@ function Login() {
           navigate("/home");
         }
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        setError("Invalid email or password. Please try again.");
+      });
   };
 
   return (
@@ -34,6 +38,7 @@ function Login() {
       <div className="bg-white p-3 rounded w-25">
         <h2 className="text-center mb-2 user-select-none">Login</h2>
         <form onSubmit={handleSubmit}>
+          {error && <p className="text-danger">{error}</p>}
           <div className="Input mb-3">
             <label htmlFor="email">
               <strong className="user-select-none">Email</strong>
