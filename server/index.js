@@ -21,10 +21,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS setup
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL || "http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://registration-mern.vercel.app"
+    ],
     methods: ["POST", "GET"],
     credentials: true,
   })
