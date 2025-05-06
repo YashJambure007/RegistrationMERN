@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable no-undef */
 import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,25 +6,21 @@ import { IoEyeOutline } from "react-icons/io5";
 import { FaRegEyeSlash } from "react-icons/fa";
 
 function Login() {
-  const [passwordData, setPasswordData] = useState();
-  const [showPassword, setShowPassword] = useState();
-
-  const [name, setName] = useState();
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleInput = (e) => {
-    setPasswordData(e.target.value);
-  };
   const handleShowPassword = () => {
     setShowPassword(!showPassword);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const apiUrl = process.env.REACT_APP_API_URL;
+
     axios
-      .post("http://localhost:3000/login", { email, password })
+      .post(`${apiUrl}/login`, { email, password })
       .then((result) => {
         console.log(result);
         if (result.data.Status === "Success") {
@@ -57,7 +53,7 @@ function Login() {
             <strong className="user-select-none">Password</strong>
           </label>
 
-          <div className="Input mb-3">
+          <div className="Input mb-3 position-relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter Password Here"
@@ -67,12 +63,12 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <div className="Icon">
-              {showPassword ? (
-                <IoEyeOutline onClick={handleShowPassword} />
-              ) : (
-                <FaRegEyeSlash onClick={handleShowPassword} />
-              )}
+            <div
+              className="Icon position-absolute top-50 end-0 translate-middle-y pe-2"
+              style={{ cursor: 'pointer' }}
+              onClick={handleShowPassword}
+            >
+              {showPassword ? <IoEyeOutline /> : <FaRegEyeSlash />}
             </div>
           </div>
           <button
@@ -95,4 +91,3 @@ function Login() {
 }
 
 export default Login;
-Login;
