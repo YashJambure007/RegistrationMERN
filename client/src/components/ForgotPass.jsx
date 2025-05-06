@@ -1,22 +1,28 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function ForgotPass() {
   const [email, setEmail] = useState();
   const navigate = useNavigate();
 
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   axios.defaults.withCredentials = true;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     axios
-      .post("http://localhost:3000/forgot-password", { email })
+      .post(`${apiUrl}/forgot-password`, { email })
       .then((res) => {
         if (res.data.Status === "Success") {
           navigate("/login");
         }
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.error(err);
+        alert("Something went wrong. Please try again.");
+      });
   };
 
   return (

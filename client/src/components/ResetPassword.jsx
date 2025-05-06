@@ -1,6 +1,5 @@
-import React from "react";
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 function ResetPassword() {
@@ -8,11 +7,15 @@ function ResetPassword() {
   const navigate = useNavigate();
   const { id, token } = useParams();
 
+  // Set API URL from environment variable (use VITE_API_URL for Vite)
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   axios.defaults.withCredentials = true;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     axios
-      .post(`http://localhost:3000/reset-password/${id}/${token}`, { password })
+      .post(`${apiUrl}/reset-password/${id}/${token}`, { password })
       .then((res) => {
         if (res.data.Status === "Success") {
           navigate("/login");
