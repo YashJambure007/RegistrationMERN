@@ -15,24 +15,25 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// Log all incoming requests
+// Middleware to log all requests
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
+// CORS setup to allow frontend to communicate with API
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://registration-mern.vercel.app"
+      "http://localhost:5173", // Local development URL
+      process.env.FRONTEND_URL, // Production frontend URL (from .env)
     ],
     methods: ["POST", "GET"],
-    credentials: true,
+    credentials: true, // Allow cookies to be sent with requests
   })
 );
 
-// Root route to verify deployment
+// Root route to verify the server is running
 app.get("/", (req, res) => {
   res.send("API is running");
 });
@@ -43,12 +44,15 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Middleware to verify admin user
+// JWT secret key from environment variable
+const jwtSecret = process.env.JWT_SECRET || "your-default-jwt-secret";
+
+// Middleware to verify if the user is an admin
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json("Token is missing");
 
-  jwt.verify(token, "jwt-secret-key", (err, decoded) => {
+  jwt.verify(token, jwtSecret, (err, decoded) => {
     if (err) return res.status(403).json("Invalid token");
     if (decoded.role === "admin") next();
     else return res.status(403).json("Not authorized");
@@ -56,10 +60,13 @@ const verifyUser = (req, res, next) => {
 };
 
 // Routes
+
+// Dashboard route, accessible only to verified users
 app.get("/dashboard", verifyUser, (req, res) => {
   res.json("Success");
 });
 
+// Register new user
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
   bcrypt
@@ -72,6 +79,7 @@ app.post("/register", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
+// User login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   UserModel.findOne({ email }).then((user) => {
@@ -81,12 +89,12 @@ app.post("/login", (req, res) => {
       if (response) {
         const token = jwt.sign(
           { email: user.email, role: user.role },
-          "jwt-secret-key",
+          jwtSecret,
           { expiresIn: "1d" }
         );
         res.cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production", // Only secure cookies in production
           sameSite: "Lax",
         });
         return res.json({ Status: "Success", role: user.role });
@@ -97,12 +105,13 @@ app.post("/login", (req, res) => {
   });
 });
 
+// Forgot password route
 app.post("/forgot-password", (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email }).then((user) => {
     if (!user) return res.status(404).json({ Status: "User not existed" });
 
-    const token = jwt.sign({ id: user._id }, "jwt_secret_key", {
+    const token = jwt.sign({ id: user._id }, jwtSecret, {
       expiresIn: "1d",
     });
 
@@ -130,11 +139,12 @@ app.post("/forgot-password", (req, res) => {
   });
 });
 
+// Reset password route
 app.post("/reset-password/:id/:token", (req, res) => {
   const { id, token } = req.params;
   const { password } = req.body;
 
-  jwt.verify(token, "jwt_secret_key", (err) => {
+  jwt.verify(token, jwtSecret, (err) => {
     if (err) return res.status(403).json({ Status: "Invalid token" });
 
     bcrypt
@@ -148,7 +158,6 @@ app.post("/reset-password/:id/:token", (req, res) => {
   });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
