@@ -20,7 +20,7 @@ function Login() {
     const apiUrl = import.meta.env.VITE_API_URL;
 
     axios
-      .post(`${apiUrl}/login`, { email, password }, { withCredentials: true }) // ✅ Added withCredentials
+      .post(`${apiUrl}/login`, { email, password }, { withCredentials: true }) 
       .then((result) => {
         console.log(result);
         if (result.data.Status === "Success") {

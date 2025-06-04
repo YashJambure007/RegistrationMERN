@@ -26,8 +26,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://registration-mern-15uk.vercel.app",
-      "https://registration-mern.vercel.app", // include any active frontend URL
+      "https://registration-project-mern.vercel.app/"
     ],
     methods: ["POST", "GET"],
     credentials: true,
@@ -93,8 +92,8 @@ app.post("/login", (req, res) => {
         );
         res.cookie("token", token, {
           httpOnly: true,
-          secure: true, // Always true for cross-site in production
-          sameSite: "None", // Required for cross-site cookies
+          secure: true, 
+          sameSite: "None", 
         });
         return res.json({ Status: "Success", role: user.role });
       } else {
