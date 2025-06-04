@@ -25,8 +25,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://registration-project-mern-r7mo.vercel.app/"
+      "https://registration-project-mern-19k9.vercel.app/"
     ],
     methods: ["POST", "GET"],
     credentials: true,
