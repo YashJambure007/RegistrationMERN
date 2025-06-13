@@ -24,24 +24,22 @@ app.use(
   })
 );
 
-// ✅ Allow preflight OPTIONS requests
 app.options("*", cors());
 
-// 🌐 Simple route to confirm server is running
 app.get("/", (req, res) => {
   res.send("API is running");
 });
 
-// ✅ Connect to MongoDB
+//Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error(" MongoDB connection error:", err));
 
-// ✅ JWT secret
+// JWT secret
 const jwtSecret = process.env.JWT_SECRET || "your-default-jwt-secret";
 
-// ✅ Auth middleware
+//  Auth middleware
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json("Token is missing");
@@ -53,12 +51,12 @@ const verifyUser = (req, res, next) => {
   });
 };
 
-// 🧪 Protected route
+// Protected route
 app.get("/dashboard", verifyUser, (req, res) => {
   res.json("Success");
 });
 
-// 🔐 Register
+// Register
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
   bcrypt
@@ -71,7 +69,7 @@ app.post("/register", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
-// 🔐 Login
+// Login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   UserModel.findOne({ email }).then((user) => {
@@ -97,7 +95,7 @@ app.post("/login", (req, res) => {
   });
 });
 
-// 📧 Forgot password
+// Forgot password
 app.post("/forgot-password", (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email }).then((user) => {
@@ -129,7 +127,7 @@ app.post("/forgot-password", (req, res) => {
   });
 });
 
-// 🔒 Reset password
+// Reset password
 app.post("/reset-password/:id/:token", (req, res) => {
   const { id, token } = req.params;
   const { password } = req.body;
@@ -148,7 +146,7 @@ app.post("/reset-password/:id/:token", (req, res) => {
   });
 });
 
-// 🚀 Start server
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
