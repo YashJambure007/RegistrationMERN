@@ -15,39 +15,33 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// Middleware to log requests
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-// CORS configuration
+// ✅ Correct CORS configuration
 app.use(
   cors({
-    origin: [
-      "https://registration-project-mern.vercel.app/",
-    ],
-    methods: ["POST", "GET"],
+    origin: ["https://registration-project-mern.vercel.app"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
+// ✅ Allow preflight OPTIONS requests
+app.options("*", cors());
 
-// Root route
+// 🌐 Simple route to confirm server is running
 app.get("/", (req, res) => {
   res.send("API is running");
 });
 
-// MongoDB connection
+// ✅ Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// JWT secret
+// ✅ JWT secret
 const jwtSecret = process.env.JWT_SECRET || "your-default-jwt-secret";
 
-// Verify admin middleware
+// ✅ Auth middleware
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json("Token is missing");
@@ -59,12 +53,12 @@ const verifyUser = (req, res, next) => {
   });
 };
 
-// Dashboard route
+// 🧪 Protected route
 app.get("/dashboard", verifyUser, (req, res) => {
   res.json("Success");
 });
 
-// Register route
+// 🔐 Register
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
   bcrypt
@@ -77,7 +71,7 @@ app.post("/register", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
-// Login route
+// 🔐 Login
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   UserModel.findOne({ email }).then((user) => {
@@ -92,8 +86,8 @@ app.post("/login", (req, res) => {
         );
         res.cookie("token", token, {
           httpOnly: true,
-          secure: true, 
-          sameSite: "None", 
+          secure: true, // for HTTPS
+          sameSite: "None", // for cross-origin cookies
         });
         return res.json({ Status: "Success", role: user.role });
       } else {
@@ -103,15 +97,13 @@ app.post("/login", (req, res) => {
   });
 });
 
-// Forgot password
+// 📧 Forgot password
 app.post("/forgot-password", (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email }).then((user) => {
     if (!user) return res.status(404).json({ Status: "User not existed" });
 
-    const token = jwt.sign({ id: user._id }, jwtSecret, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "1d" });
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -137,7 +129,7 @@ app.post("/forgot-password", (req, res) => {
   });
 });
 
-// Reset password
+// 🔒 Reset password
 app.post("/reset-password/:id/:token", (req, res) => {
   const { id, token } = req.params;
   const { password } = req.body;
@@ -156,7 +148,7 @@ app.post("/reset-password/:id/:token", (req, res) => {
   });
 });
 
-// Start server
+// 🚀 Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
