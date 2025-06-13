@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Correct CORS configuration
+// Correct CORS configuration
 app.use(
   cors({
     origin: ["https://registration-project-mern.vercel.app"],
@@ -148,5 +148,5 @@ app.post("/reset-password/:id/:token", (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

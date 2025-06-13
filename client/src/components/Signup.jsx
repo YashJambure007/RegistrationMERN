@@ -23,7 +23,7 @@ function Signup() {
       .post(
         `${apiUrl}/register`,
         { name, email, password },
-        { withCredentials: true } // ✅ ensure cookies are sent
+        { withCredentials: true } 
       )
       .then((result) => {
         console.log(result);

@@ -14,7 +14,7 @@ function ForgotPass() {
       .post(
         `${apiUrl}/forgot-password`,
         { email },
-        { withCredentials: true } // ✅ ensure cookies are sent
+        { withCredentials: true } 
       )
       .then((res) => {
         if (res.data.Status === "Success") {

@@ -7,7 +7,7 @@ function ResetPassword() {
   const navigate = useNavigate();
   const { id, token } = useParams();
 
-  // Set API URL from environment variable (use VITE_API_URL for Vite)
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   axios.defaults.withCredentials = true;
