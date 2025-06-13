@@ -1,4 +1,4 @@
-name: MERN CI Pipeline
+name: MERN CI Workflow
 
 on:
   push:
@@ -12,35 +12,35 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18]  # You can change this if needed
+        node-version: [18]  # Use your Node.js version
 
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🟢 Set up Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
-      ### 🔧 BACKEND
+      ### 🔧 BACKEND (server)
       - name: 📦 Install Backend Dependencies
-        working-directory: ./backend
+        working-directory: ./server
         run: npm install
 
       - name: 🧪 Run Backend Tests
-        working-directory: ./backend
+        working-directory: ./server
         run: npm test || echo "No backend tests defined"
 
-      ### 🎨 FRONTEND
+      ### 🎨 FRONTEND (client)
       - name: 📦 Install Frontend Dependencies
-        working-directory: ./frontend
+        working-directory: ./client
         run: npm install
 
       - name: 🧪 Run Frontend Tests
-        working-directory: ./frontend
+        working-directory: ./client
         run: npm test || echo "No frontend tests defined"
 
       - name: 🏗 Build React App
-        working-directory: ./frontend
+        working-directory: ./client
         run: npm run build
