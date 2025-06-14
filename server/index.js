@@ -9,6 +9,8 @@ const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 
+app.set('trust proxy', 1);
+
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 
@@ -56,7 +58,10 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
@@ -163,7 +168,8 @@ app.post("/forgot-password", authLimiter, (req, res) => {
     };
 
     transporter.sendMail(mailOptions, (error) => {
-      if (error) return res.status(500).json({ Status: "Failed to send email" });
+      if (error)
+        return res.status(500).json({ Status: "Failed to send email" });
       return res.json({ Status: "Success" });
     });
   });
@@ -174,17 +180,19 @@ app.post("/reset-password/:id/:token", (req, res) => {
   const { id, token } = req.params;
   const { password } = req.body;
 
-  jwt.verify(token, jwtSecret, (err) => {
-    if (err) return res.status(403).json({ Status: "Invalid token" });
-
-    bcrypt
-      .hash(password, 10)
-      .then((hash) => {
-        UserModel.findByIdAndUpdate(id, { password: hash })
-          .then(() => res.json({ Status: "Success" }))
-          .catch((err) => res.status(500).json({ Status: err }));
-      })
-      .catch((err) => res.status(500).json({ Status: err }));
+  jwt.verify(token, "jwt_secret_key", (err, decoded) => {
+    if (err) {
+      return res.json({ Status: "Error with token" });
+    } else {
+      bcrypt
+        .hash(password, 10)
+        .then((hash) => {
+          UserModel.findByIdAndUpdate({ _id: id }, { password: hash })
+            .then((u) => res.send({ Status: "Success" }))
+            .catch((err) => res.send({ Status: err }));
+        })
+        .catch((err) => res.send({ Status: err }));
+    }
   });
 });
 

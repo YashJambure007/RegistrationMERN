@@ -7,7 +7,6 @@ function ResetPassword() {
   const navigate = useNavigate();
   const { id, token } = useParams();
 
-
   const apiUrl = import.meta.env.VITE_API_URL;
 
   axios.defaults.withCredentials = true;
@@ -23,6 +22,7 @@ function ResetPassword() {
       })
       .catch((err) => console.log(err));
   };
+
 
   return (
     <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
