@@ -46,6 +46,10 @@ app.use(
   })
 );
 
+// Handle preflight OPTIONS requests
+app.options("*", cors());
+
+// Manual CORS headers (for some legacy support)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -183,8 +187,6 @@ app.post("/reset-password/:id/:token", (req, res) => {
       .catch((err) => res.status(500).json({ Status: err }));
   });
 });
-
-app.options("*", cors());
 
 // Start server
 app.listen(PORT, () => {
