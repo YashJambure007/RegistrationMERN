@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18]  # Use your Node.js version
+        node-version: [18]
 
     steps:
       - name: 📥 Checkout Code
@@ -44,3 +44,7 @@ jobs:
       - name: 🏗 Build React App
         working-directory: ./client
         run: npm run build
+
+      # Optional: Deploy step (add your deployment config)
+      # - name:  Deploy to Vercel or Render
+      #   run: echo "Add your deploy script here"

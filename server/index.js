@@ -7,39 +7,77 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// Correct CORS configuration
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: "Too many requests, please try again later.",
+});
+
+// Allowed origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://registration-project-mern.vercel.app",
+];
+
+// CORS setup
 app.use(
   cors({
-    origin: ["https://registration-project-mern.vercel.app"],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
-app.options("*", cors());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
+// Root
 app.get("/", (req, res) => {
   res.send("API is running");
 });
 
-//Connect to MongoDB
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error(" MongoDB connection error:", err));
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // JWT secret
 const jwtSecret = process.env.JWT_SECRET || "your-default-jwt-secret";
 
-//  Auth middleware
+// Verify user middleware
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json("Token is missing");
@@ -56,8 +94,8 @@ app.get("/dashboard", verifyUser, (req, res) => {
   res.json("Success");
 });
 
-// Register
-app.post("/register", (req, res) => {
+// Register route
+app.post("/register", authLimiter, (req, res) => {
   const { name, email, password } = req.body;
   bcrypt
     .hash(password, 10)
@@ -69,8 +107,8 @@ app.post("/register", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
-// Login
-app.post("/login", (req, res) => {
+// Login route
+app.post("/login", authLimiter, (req, res) => {
   const { email, password } = req.body;
   UserModel.findOne({ email }).then((user) => {
     if (!user) return res.status(404).json("No Record existed");
@@ -84,8 +122,8 @@ app.post("/login", (req, res) => {
         );
         res.cookie("token", token, {
           httpOnly: true,
-          secure: true, // for HTTPS
-          sameSite: "None", // for cross-origin cookies
+          secure: true,
+          sameSite: "None",
         });
         return res.json({ Status: "Success", role: user.role });
       } else {
@@ -96,7 +134,7 @@ app.post("/login", (req, res) => {
 });
 
 // Forgot password
-app.post("/forgot-password", (req, res) => {
+app.post("/forgot-password", authLimiter, (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email }).then((user) => {
     if (!user) return res.status(404).json({ Status: "User not existed" });
@@ -145,6 +183,8 @@ app.post("/reset-password/:id/:token", (req, res) => {
       .catch((err) => res.status(500).json({ Status: err }));
   });
 });
+
+app.options("*", cors());
 
 // Start server
 app.listen(PORT, () => {

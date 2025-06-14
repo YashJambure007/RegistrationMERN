@@ -13,16 +13,16 @@ node_modules/
 dist/
 dist-ssr/
 .vite/
+build/
 
-# Local env files
+# Local environment files
 .env
 .env.local
 .env.*.local
+server/.env
+client/.env
 
-# System files
-.DS_Store
-
-# Editor settings
+# Editor directories and settings
 .vscode/
 .idea/
 *.suo
@@ -30,6 +30,11 @@ dist-ssr/
 *.njsproj
 *.sln
 *.sw?
-
-# Optional: Swap files
 *.swp
+
+# OS system files
+.DS_Store
+Thumbs.db
+
+# Optional: dotenv backups
+.env.backup
