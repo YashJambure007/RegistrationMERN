@@ -9,12 +9,12 @@ const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 
-app.set('trust proxy', 1);
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+app.set("trust proxy", 1); 
 
 // Middleware
 app.use(express.json());
