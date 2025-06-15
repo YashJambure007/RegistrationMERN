@@ -109,7 +109,7 @@ app.post("/register", authLimiter, (req, res) => {
   bcrypt
     .hash(password, 10)
     .then((hash) => {
-      UserModel.create({ name, email, password: hash })
+      UserModel.create({ name, email, password: hash, role })
         .then(() => res.json("Success"))
         .catch((err) => res.status(500).json(err));
     })
