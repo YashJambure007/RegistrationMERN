@@ -12,7 +12,7 @@ permissions:
   actions: read
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -28,8 +28,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
 
-      ###  BACKEND
+      # Backend
       - name: Install Backend Dependencies
         working-directory: ./server
         run: npm ci
@@ -37,13 +40,13 @@ jobs:
       - name: Run Backend Tests
         working-directory: ./server
         run: |
-          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+          if [ -f package.json ] && grep -q '"test"' package.json; then
             npm test
           else
             echo "No backend tests defined"
           fi
 
-      ###  FRONTEND
+      # Frontend
       - name: Install Frontend Dependencies
         working-directory: ./client
         run: npm ci
@@ -51,7 +54,7 @@ jobs:
       - name: Run Frontend Tests
         working-directory: ./client
         run: |
-          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+          if [ -f package.json ] && grep -q '"test"' package.json; then
             npm test
           else
             echo "No frontend tests defined"
@@ -60,13 +63,3 @@ jobs:
       - name: Build React App
         working-directory: ./client
         run: npm run build
-
-      ###  DEPLOY TO RENDER (Backend)
-      - name: Deploy Backend to Render
-        run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
-
-      ###  DEPLOY TO VERCEL (Frontend)
-      - name: Deploy Frontend to Vercel
-        working-directory: ./client
-        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
