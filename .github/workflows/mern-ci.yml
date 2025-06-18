@@ -1,46 +1,79 @@
-name: MERN CI
+name: MERN CI Workflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
 
 jobs:
-  build-frontend:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    name: Build Frontend
+
+    strategy:
+      matrix:
+        node-version: [18]
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-      - name: Install frontend dependencies
+      - name: Install Backend Dependencies
+        working-directory: ./server
+        run: npm ci || npm install
+
+      - name: Run Backend Tests
+        working-directory: ./server
+        run: |
+          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+            npm test
+          else
+            echo "No backend tests defined"
+          fi
+
+      - name: Install Frontend Dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm ci || npm install
 
-      - name: Build frontend
+      - name: Run Frontend Tests
+        working-directory: ./client
+        run: |
+          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+            npm test
+          else
+            echo "No frontend tests defined"
+          fi
+
+      - name: Build React App
         working-directory: ./client
         run: npm run build
 
-  build-backend:
-    runs-on: ubuntu-latest
-    name: Build Backend
-    steps:
-      - uses: actions/checkout@v3
+      - name: Deploy Backend to Render
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -z "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}" ]; then
+            curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+          else
+            echo "RENDER_DEPLOY_HOOK_BACKEND secret is not set"
+          fi
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install backend dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Lint backend
-        working-directory: ./server
-        run: npm run lint || echo "Lint skipped"
+      - name: Deploy Frontend to Vercel
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./client
+        run: |
+          if [ ! -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            echo "VERCEL_TOKEN secret is not set"
+          fi
