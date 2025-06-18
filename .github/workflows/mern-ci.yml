@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read      # to checkout the code
+  id-token: write     # for GitHub OIDC (if deploying to cloud)
+  actions: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -15,36 +20,47 @@ jobs:
         node-version: [18]
 
     steps:
-      - name: 📥 Checkout Code
+      - name:  Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🟢 Setup Node.js
+      - name:  Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       ### 🔧 BACKEND (server)
-      - name: 📦 Install Backend Dependencies
+      - name:  Install Backend Dependencies
         working-directory: ./server
-        run: npm install
+        run: npm ci
 
-      - name: 🧪 Run Backend Tests
+      - name:  Run Backend Tests
         working-directory: ./server
-        run: npm test || echo "No backend tests defined"
+        run: |
+          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+            npm test
+          else
+            echo "No backend tests defined"
+          fi
 
-      ### 🎨 FRONTEND (client)
-      - name: 📦 Install Frontend Dependencies
+      ### FRONTEND (client)
+      - name: Install Frontend Dependencies
         working-directory: ./client
-        run: npm install
+        run: npm ci
 
-      - name: 🧪 Run Frontend Tests
+      - name: Run Frontend Tests
         working-directory: ./client
-        run: npm test || echo "No frontend tests defined"
+        run: |
+          if [ -f package.json ] && grep -q '"test"' ./package.json; then
+            npm test
+          else
+            echo "No frontend tests defined"
+          fi
 
-      - name: 🏗 Build React App
+      - name:  Build React App
         working-directory: ./client
         run: npm run build
 
-      # Optional: Deploy step (add your deployment config)
+      #  Optional: Add deployment steps here
       # - name:  Deploy to Vercel or Render
-      #   run: echo "Add your deploy script here"
+      #   run: echo "Add your deploy script or curl deploy hook"

@@ -9,18 +9,18 @@ const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 
-
 dotenv.config();
 const PORT = process.env.PORT || 3000;
+const jwtSecret = process.env.JWT_SECRET;
 
 const app = express();
-app.set("trust proxy", 1); 
+app.set("trust proxy", 1);
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// Rate limiting
+// Rate limiting (5 requests per minute for auth routes)
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
@@ -30,7 +30,7 @@ const authLimiter = rateLimit({
 // Allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://registration-project-mern.vercel.app",
+  "https://registration-project-mern-c7z1orkcw-yash-jambures-projects.vercel.app",
 ];
 
 // CORS setup
@@ -48,10 +48,8 @@ app.use(
   })
 );
 
-// Handle preflight OPTIONS requests
 app.options("*", cors());
 
-// Manual CORS headers (for some legacy support)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -66,13 +64,11 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-// Root
+// Root route
 app.get("/", (req, res) => {
   res.send("API is running");
 });
@@ -83,10 +79,7 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// JWT secret
-const jwtSecret = process.env.JWT_SECRET || "your-default-jwt-secret";
-
-// Verify user middleware
+// Middleware: Verify user
 const verifyUser = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json("Token is missing");
@@ -104,94 +97,98 @@ app.get("/dashboard", verifyUser, (req, res) => {
 });
 
 // Register route
-app.post("/register", authLimiter, (req, res) => {
-  const { name, email, password } = req.body;
-  bcrypt
-    .hash(password, 10)
-    .then((hash) => {
-      UserModel.create({ name, email, password: hash, role })
-        .then(() => res.json("Success"))
-        .catch((err) => res.status(500).json(err));
-    })
-    .catch((err) => res.status(500).json(err));
+app.post("/register", authLimiter, async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password || !role)
+      return res.status(400).json("All fields are required");
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await UserModel.create({ name, email, password: hashedPassword, role });
+    res.json("Success");
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // Login route
-app.post("/login", authLimiter, (req, res) => {
-  const { email, password } = req.body;
-  UserModel.findOne({ email }).then((user) => {
+app.post("/login", authLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await UserModel.findOne({ email });
     if (!user) return res.status(404).json("No Record existed");
 
-    bcrypt.compare(password, user.password, (err, response) => {
-      if (response) {
-        const token = jwt.sign(
-          { email: user.email, role: user.role },
-          jwtSecret,
-          { expiresIn: "1d" }
-        );
-        res.cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "None",
-        });
-        return res.json({ Status: "Success", role: user.role });
-      } else {
-        return res.status(401).json("The password is incorrect");
-      }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json("Incorrect password");
+
+    const token = jwt.sign(
+      { email: user.email, role: user.role },
+      jwtSecret,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
     });
-  });
+
+    res.json({ Status: "Success", role: user.role });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // Forgot password
-app.post("/forgot-password", authLimiter, (req, res) => {
+app.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body;
-  UserModel.findOne({ email }).then((user) => {
-    if (!user) return res.status(404).json({ Status: "User not existed" });
 
-    const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "1d" });
+  const user = await UserModel.findOne({ email });
+  if (!user) return res.status(404).json({ Status: "User not existed" });
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+  const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "1d" });
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${user._id}/${token}`;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Reset Password Link",
-      text: `Click to reset: ${resetUrl}`,
-    };
+  const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${user._id}/${token}`;
 
-    transporter.sendMail(mailOptions, (error) => {
-      if (error)
-        return res.status(500).json({ Status: "Failed to send email" });
-      return res.json({ Status: "Success" });
-    });
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Reset Password Link",
+    text: `Click to reset: ${resetUrl}`,
+  };
+
+  transporter.sendMail(mailOptions, (error) => {
+    if (error)
+      return res.status(500).json({ Status: "Failed to send email" });
+    return res.json({ Status: "Success" });
   });
 });
 
 // Reset password
-app.post("/reset-password/:id/:token", (req, res) => {
+app.post("/reset-password/:id/:token", async (req, res) => {
   const { id, token } = req.params;
   const { password } = req.body;
 
-  jwt.verify(token, "jwt_secret_key", (err, decoded) => {
-    if (err) {
-      return res.json({ Status: "Error with token" });
-    } else {
-      bcrypt
-        .hash(password, 10)
-        .then((hash) => {
-          UserModel.findByIdAndUpdate({ _id: id }, { password: hash })
-            .then((u) => res.send({ Status: "Success" }))
-            .catch((err) => res.send({ Status: err }));
-        })
-        .catch((err) => res.send({ Status: err }));
+  jwt.verify(token, jwtSecret, async (err, decoded) => {
+    if (err) return res.status(401).json({ Status: "Invalid or expired token" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+      await UserModel.findByIdAndUpdate(id, { password: hashedPassword });
+      res.json({ Status: "Success" });
+    } catch (err) {
+      res.status(500).json({ Status: "Error updating password" });
     }
   });
 });
