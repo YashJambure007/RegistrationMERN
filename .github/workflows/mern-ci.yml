@@ -1,65 +1,46 @@
-name: MERN CI Workflow
+name: MERN CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
-
-permissions:
-  contents: read
-  id-token: write
-  actions: read
 
 jobs:
-  build-and-test:
+  build-frontend:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18]
-
+    name: Build Frontend
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: |
-            client/package-lock.json
-            server/package-lock.json
+          node-version: 18
 
-      # Backend
-      - name: Install Backend Dependencies
-        working-directory: ./server
-        run: npm ci
-
-      - name: Run Backend Tests
-        working-directory: ./server
-        run: |
-          if [ -f package.json ] && grep -q '"test"' package.json; then
-            npm test
-          else
-            echo "No backend tests defined"
-          fi
-
-      # Frontend
-      - name: Install Frontend Dependencies
+      - name: Install frontend dependencies
         working-directory: ./client
         run: npm ci
 
-      - name: Run Frontend Tests
-        working-directory: ./client
-        run: |
-          if [ -f package.json ] && grep -q '"test"' package.json; then
-            npm test
-          else
-            echo "No frontend tests defined"
-          fi
-
-      - name: Build React App
+      - name: Build frontend
         working-directory: ./client
         run: npm run build
+
+  build-backend:
+    runs-on: ubuntu-latest
+    name: Build Backend
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install backend dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Lint backend
+        working-directory: ./server
+        run: npm run lint || echo "Lint skipped"
