@@ -27,13 +27,13 @@ const authLimiter = rateLimit({
   message: "Too many requests, please try again later.",
 });
 
-// Allowed origins
+//  Allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://registration-project-mern-c7z1orkcw-yash-jambures-projects.vercel.app",
+  "https://registration-mern.vercel.app", // Replace with your actual Vercel domain
 ];
 
-// CORS setup
+//  CORS setup
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -111,7 +111,6 @@ app.post("/register", authLimiter, async (req, res) => {
     res.status(500).json(err);
   }
 });
-
 
 // Login route
 app.post("/login", authLimiter, async (req, res) => {
