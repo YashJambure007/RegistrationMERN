@@ -5,6 +5,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    historyApiFallback: true, 
   },
+  appType: 'spa', // enables fallback to index.html
 })
